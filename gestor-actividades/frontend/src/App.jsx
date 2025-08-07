@@ -4,6 +4,8 @@ import Modal from 'react-modal';
 
 Modal.setAppElement('#root');
 
+const API_URL = 'https://gestor-de-novedades-backend.onrender.com/actividades';
+
 function App() {
   const [actividades, setActividades] = useState([]);
   const [form, setForm] = useState({
@@ -24,7 +26,7 @@ function App() {
   });
 
   const cargarActividades = async () => {
-    const res = await axios.get('http://localhost:4000/actividades');
+    const res = await axios.get(API_URL);
     setActividades(res.data);
   };
 
@@ -37,41 +39,41 @@ function App() {
   const soloNumerosEspeciales = /^[0-9: -]+$/;
 
   // Agregar actividad
-const agregarActividad = async () => {
-  try {
-    if (!form.nombre.match(soloLetras)) {
-      alert('El campo "Actividad" solo acepta letras.');
-      return;
-    }
-    if (!form.lugar.match(soloLetras)) {
-      alert('El campo "Lugar" solo acepta letras.');
-      return;
-    }
-    if (!form.horario.match(soloNumerosEspeciales)) {
-      alert('El campo "Horario" solo acepta números y caracteres especiales (: -).');
-      return;
-    }
-    if (!form.fechaFin) {
-      alert('Completa la fecha de finalización.');
-      return;
-    }
-    if (!form.detalles.trim()) {
-      alert('El campo "Detalles" no puede estar vacío.');
-      return;
-    }
+  const agregarActividad = async () => {
+    try {
+      if (!form.nombre.match(soloLetras)) {
+        alert('El campo "Actividad" solo acepta letras.');
+        return;
+      }
+      if (!form.lugar.match(soloLetras)) {
+        alert('El campo "Lugar" solo acepta letras.');
+        return;
+      }
+      if (!form.horario.match(soloNumerosEspeciales)) {
+        alert('El campo "Horario" solo acepta números y caracteres especiales (: -).');
+        return;
+      }
+      if (!form.fechaFin) {
+        alert('Completa la fecha de finalización.');
+        return;
+      }
+      if (!form.detalles.trim()) {
+        alert('El campo "Detalles" no puede estar vacío.');
+        return;
+      }
 
-    await axios.post('http://localhost:4000/actividades', form);
-    setForm({ nombre: '', lugar: '', horario: '', fechaFin: '', detalles: '' });
-    cargarActividades();
-  } catch (error) {
-    alert('Error al agregar actividad');
-  }
-};
+      await axios.post(API_URL, form);
+      setForm({ nombre: '', lugar: '', horario: '', fechaFin: '', detalles: '' });
+      cargarActividades();
+    } catch (error) {
+      alert('Error al agregar actividad');
+    }
+  };
 
   // Eliminar actividad
   const eliminarActividad = async (id) => {
     try {
-      await axios.delete(`http://localhost:4000/actividades/${id}`);
+      await axios.delete(`${API_URL}/${id}`);
       cargarActividades();
     } catch (error) {
       alert('Error al eliminar actividad');
@@ -110,7 +112,7 @@ const agregarActividad = async () => {
         return;
       }
 
-      await axios.put(`http://localhost:4000/actividades/${id}`, editForm);
+      await axios.put(`${API_URL}/${id}`, editForm);
       setEditId(null);
       cargarActividades();
     } catch (error) {
@@ -125,8 +127,8 @@ const agregarActividad = async () => {
 
   // Cambios en el formulario
   const handleChange = e => {
-  setForm({ ...form, [e.target.name]: e.target.value });
-};
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
 
   const handleEditChange = e => {
     setEditForm({ ...editForm, [e.target.name]: e.target.value });
@@ -152,26 +154,27 @@ const agregarActividad = async () => {
         <h1 className="mt-2" style={{ color: '#ffffffff', fontWeight: 'bold', fontSize: '3.2rem', textDecoration: 'underline'}}>Gestor de novedades</h1>
       </header>
 
-      <div className="card mb-4 shadow-sm" style={{ width: '100%', fontSize: '1.3rem', maxWidth: '50%' }}>
-        <div className="card-body" style= {{ backgroundColor: ' #000000ff '}}>
+      <div className="card mb-4 shadow-sm" style={{ width: '100%', fontSize: '1.3rem', maxWidth: '600px', margin: 'auto' }}>
+        <div className="card-body" style={{ backgroundColor: '#000000ff' }}>
           <h2 className="card-title mb-3" style={{ color: '#000000ff', fontSize: '2.2rem' }}>Agregar Actividad</h2>
-          <div className="row g-2">
-            <div className="col-12 col-md-3">
-              <input name="nombre" className="form-control form-control-lg" placeholder="Actividad" value={form.nombre} onChange={handleChange} />
+          <div className="row g-2" style={{ flexDirection: 'column' }}>
+            <div className="col-12">
+              <input name="nombre" className="form-control form-control-lg" style={{ width: '100%' }} placeholder="Actividad" value={form.nombre} onChange={handleChange} />
             </div>
-            <div className="col-12 col-md-3">
-              <input name="lugar" className="form-control form-control-lg" placeholder="Lugar" value={form.lugar} onChange={handleChange} />
+            <div className="col-12">
+              <input name="lugar" className="form-control form-control-lg" style={{ width: '100%' }} placeholder="Lugar" value={form.lugar} onChange={handleChange} />
             </div>
-            <div className="col-12 col-md-3">
-              <input name="horario" className="form-control form-control-lg" placeholder="Horario" value={form.horario} onChange={handleChange} />
+            <div className="col-12">
+              <input name="horario" className="form-control form-control-lg" style={{ width: '100%' }} placeholder="Horario" value={form.horario} onChange={handleChange} />
             </div>
-            <div className="col-12 col-md-3">
-              <input name="fechaFin" type="date" className="form-control form-control-lg" value={form.fechaFin} onChange={handleChange} />
+            <div className="col-12">
+              <input name="fechaFin" type="date" className="form-control form-control-lg" style={{ width: '100%' }} value={form.fechaFin} onChange={handleChange} />
             </div>
             <div className="col-12 mt-2">
               <input
                 name="detalles"
                 className="form-control form-control-lg"
+                style={{ width: '100%' }}
                 placeholder="Detalles"
                 value={form.detalles}
                 onChange={handleChange}
@@ -182,7 +185,7 @@ const agregarActividad = async () => {
         </div>
       </div>
 
-      <div className="card shadow-sm" style={{ width: '100%', fontSize: '1.3rem', maxWidth: '50%' }}>
+      <div className="card shadow-sm" style={{ width: '100%', fontSize: '1.3rem', maxWidth: '600px', margin: 'auto' }}>
         <div className="card-body" style={{ backgroundColor: '#030303ff' }}>
           <h3 className="card-title mb-3" style={{ color: '#ffffffff', fontSize: '2.2rem' }}>Novedades</h3>
           <ul className="list-group">
@@ -226,11 +229,11 @@ const agregarActividad = async () => {
         }}
       >
         <h2 className="mb-3" style={{ color: '#000000ff', fontSize: '2.2rem' }}>Editar novedad</h2>
-        <input name="nombre" className="form-control form-control-lg mb-3" value={editForm.nombre} onChange={handleEditChange} placeholder="Nombre" />
-        <input name="lugar" className="form-control form-control-lg mb-3" value={editForm.lugar} onChange={handleEditChange} placeholder="Lugar" />
-        <input name="horario" className="form-control form-control-lg mb-3" value={editForm.horario} onChange={handleEditChange} placeholder="Horario" />
-        <input name="fechaFin" type="date" className="form-control form-control-lg mb-3" value={editForm.fechaFin} onChange={handleEditChange} />
-        <input name="detalles" className="form-control form-control-lg mb-3" value={editForm.detalles} onChange={handleEditChange} placeholder="Detalles" />
+        <input name="nombre" className="form-control form-control-lg mb-3" style={{ width: '100%' }} value={editForm.nombre} onChange={handleEditChange} placeholder="Nombre" />
+        <input name="lugar" className="form-control form-control-lg mb-3" style={{ width: '100%' }} value={editForm.lugar} onChange={handleEditChange} placeholder="Lugar" />
+        <input name="horario" className="form-control form-control-lg mb-3" style={{ width: '100%' }} value={editForm.horario} onChange={handleEditChange} placeholder="Horario" />
+        <input name="fechaFin" type="date" className="form-control form-control-lg mb-3" style={{ width: '100%' }} value={editForm.fechaFin} onChange={handleEditChange} />
+        <input name="detalles" className="form-control form-control-lg mb-3" style={{ width: '100%' }} value={editForm.detalles} onChange={handleEditChange} placeholder="Detalles" />
         <div className="d-flex justify-content-end mt-3">
           <button onClick={() => guardarEdicion(editId)} className="btn btn-success btn-lg mx-2" style={{ fontSize: '1.2rem' }}>Guardar</button>
           <button onClick={cancelarEdicion} className="btn btn-secondary btn-lg" style={{ fontSize: '1.2rem' }}>Cancelar</button>
