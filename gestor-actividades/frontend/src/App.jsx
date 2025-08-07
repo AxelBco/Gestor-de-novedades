@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import Modal from 'react-modal';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 Modal.setAppElement('#root');
 
@@ -25,6 +26,9 @@ function App() {
     detalles: '',
   });
 
+  const [loading, setLoading] = useState(false);
+  const [busqueda, setBusqueda] = useState("");
+
   const cargarActividades = async () => {
     const res = await axios.get(API_URL);
     setActividades(res.data);
@@ -42,7 +46,7 @@ function App() {
   const agregarActividad = async () => {
     try {
       if (!form.nombre.match(soloLetras)) {
-        alert('El campo "Actividad" solo acepta letras.');
+        alert('El campo "Novedad" solo acepta letras.');
         return;
       }
       if (!form.lugar.match(soloLetras)) {
@@ -62,11 +66,14 @@ function App() {
         return;
       }
 
+      setLoading(true);
       await axios.post(API_URL, form);
       setForm({ nombre: '', lugar: '', horario: '', fechaFin: '', detalles: '' });
-      cargarActividades();
+      await cargarActividades();
     } catch (error) {
-      alert('Error al agregar actividad');
+      alert('Error al agregar Novedad');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -76,7 +83,7 @@ function App() {
       await axios.delete(`${API_URL}/${id}`);
       cargarActividades();
     } catch (error) {
-      alert('Error al eliminar actividad');
+      alert('Error al eliminar Novedad');
     }
   };
 
@@ -96,7 +103,7 @@ function App() {
   const guardarEdicion = async (id) => {
     try {
       if (!editForm.nombre.match(soloLetras)) {
-        alert('El campo "Actividad" solo acepta letras.');
+        alert('El campo "Novedad" solo acepta letras.');
         return;
       }
       if (!editForm.lugar.match(soloLetras)) {
@@ -116,7 +123,7 @@ function App() {
       setEditId(null);
       cargarActividades();
     } catch (error) {
-      alert('Error al editar actividad');
+      alert('Error al editar Novedad');
     }
   };
 
@@ -134,10 +141,36 @@ function App() {
     setEditForm({ ...editForm, [e.target.name]: e.target.value });
   };
 
-  // Mostrar tachado si la fecha de finalización ya pasó
-  const estaFinalizada = fechaFin => {
-    return new Date(fechaFin) < new Date();
+  // Cambios en el filtro de búsqueda
+  const handleBusqueda = e => {
+    setBusqueda(e.target.value);
   };
+
+  // Mostrar tachado si la fecha y hora de finalización ya pasaron
+  const estaFinalizada = act => {
+    if (!act.fechaFin || !act.horario) return false;
+    const fecha = act.fechaFin.slice(0,10);
+    const fechaHoraStr = `${fecha}T${act.horario}`;
+    const fechaHora = new Date(fechaHoraStr);
+    return new Date() > fechaHora;
+  };
+
+  // Filtrar actividades por búsqueda
+  const actividadesFiltradas = actividades.filter(act => {
+    const texto = `${act.nombre} ${act.lugar} ${act.detalles}`.toLowerCase();
+    return texto.includes(busqueda.toLowerCase());
+  });
+
+  // Ordenar actividades por fecha y hora (próximas primero)
+  const actividadesOrdenadas = [...actividadesFiltradas].sort((a, b) => {
+    const fechaA = new Date(`${a.fechaFin.slice(0,10)}T${a.horario}`);
+    const fechaB = new Date(`${b.fechaFin.slice(0,10)}T${b.horario}`);
+    return fechaA - fechaB;
+  });
+
+  // Cantidad de actividades
+  const totalActividades = actividadesOrdenadas.length;
+  const totalFinalizadas = actividadesOrdenadas.filter(estaFinalizada).length;
 
   return (
     <div
@@ -156,46 +189,80 @@ function App() {
 
       <div className="card mb-4 shadow-sm" style={{ width: '100%', fontSize: '1.3rem', maxWidth: '600px', margin: 'auto' }}>
         <div className="card-body" style={{ backgroundColor: '#000000ff' }}>
-          <h2 className="card-title mb-3" style={{ color: '#000000ff', fontSize: '2.2rem' }}>Agregar Actividad</h2>
-          <div className="row g-2" style={{ flexDirection: 'column' }}>
-            <div className="col-12">
-              <input name="nombre" className="form-control form-control-lg" style={{ width: '100%' }} placeholder="Actividad" value={form.nombre} onChange={handleChange} />
+          <h2 className="card-title mb-3" style={{ color: '#000000ff', fontSize: '2.2rem' }}>Agregar Novedad</h2>
+          <form onSubmit={e => { e.preventDefault(); agregarActividad(); }}>
+            <div className="row g-2" style={{ flexDirection: 'column' }}>
+              <div className="col-12">
+                <label htmlFor="nombre" className="form-label" style={{ color: "#fff" }}>Novedad</label>
+                <input id="nombre" name="nombre" className="form-control form-control-lg" style={{ width: '100%' }} placeholder="Novedad" value={form.nombre} onChange={handleChange} />
+              </div>
+              <div className="col-12">
+                <label htmlFor="lugar" className="form-label" style={{ color: "#fff" }}>Ubicación</label>
+                <input id="lugar" name="lugar" className="form-control form-control-lg" style={{ width: '100%' }} placeholder="Ubicación" value={form.lugar} onChange={handleChange} />
+              </div>
+              <div className="col-12">
+                <label htmlFor="horario" className="form-label" style={{ color: "#fff" }}>Horario</label>
+                <input id="horario" name="horario" className="form-control form-control-lg" style={{ width: '100%' }} placeholder="Horario" value={form.horario} onChange={handleChange} />
+              </div>
+              <div className="col-12">
+                <label htmlFor="fechaFin" className="form-label" style={{ color: "#fff" }}>Fecha</label>
+                <input id="fechaFin" name="fechaFin" type="date" className="form-control form-control-lg" style={{ width: '100%' }} value={form.fechaFin} onChange={handleChange} />
+              </div>
+              <div className="col-12 mt-2">
+                <label htmlFor="detalles" className="form-label" style={{ color: "#fff" }}>Detalles</label>
+                <input
+                  id="detalles"
+                  name="detalles"
+                  className="form-control form-control-lg"
+                  style={{ width: '100%' }}
+                  placeholder="Detalles"
+                  value={form.detalles}
+                  onChange={handleChange}
+                />
+              </div>
             </div>
-            <div className="col-12">
-              <input name="lugar" className="form-control form-control-lg" style={{ width: '100%' }} placeholder="Lugar" value={form.lugar} onChange={handleChange} />
-            </div>
-            <div className="col-12">
-              <input name="horario" className="form-control form-control-lg" style={{ width: '100%' }} placeholder="Horario" value={form.horario} onChange={handleChange} />
-            </div>
-            <div className="col-12">
-              <input name="fechaFin" type="date" className="form-control form-control-lg" style={{ width: '100%' }} value={form.fechaFin} onChange={handleChange} />
-            </div>
-            <div className="col-12 mt-2">
-              <input
-                name="detalles"
-                className="form-control form-control-lg"
-                style={{ width: '100%' }}
-                placeholder="Detalles"
-                value={form.detalles}
-                onChange={handleChange}
-              />
-            </div>
-          </div>
-          <button onClick={agregarActividad} className="btn mt-3 w-100" style={{ fontSize: '1.3rem', padding: '16px 0', color:'#ffffffff' , backgroundColor: '#242323ff' }}>Agregar</button>
+            <button
+              type="submit"
+              className="btn mt-3 w-100"
+              style={{ fontSize: '1.3rem', padding: '16px 0', color:'#ffffffff' , backgroundColor: '#242323ff' }}
+              disabled={loading}
+            >
+              {loading ? (
+                <span>
+                  <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                  {" "}Agregando...
+                </span>
+              ) : "Agregar"}
+            </button>
+          </form>
         </div>
       </div>
 
       <div className="card shadow-sm" style={{ width: '100%', fontSize: '1.3rem', maxWidth: '600px', margin: 'auto' }}>
         <div className="card-body" style={{ backgroundColor: '#030303ff' }}>
           <h3 className="card-title mb-3" style={{ color: '#ffffffff', fontSize: '2.2rem' }}>Novedades</h3>
+          {/* Campo de búsqueda */}
+          <label htmlFor="busqueda" className="form-label" style={{ color: "#fff" }}>Buscar</label>
+          <input
+            id="busqueda"
+            type="text"
+            className="form-control mb-3"
+            placeholder="Buscar por nombre, lugar o detalles..."
+            value={busqueda}
+            onChange={handleBusqueda}
+          />
+          {/* Cantidad de actividades */}
+          <div className="mb-3" style={{ color: "#fff" }}>
+            Total: <strong>{totalActividades}</strong> | Finalizadas: <strong>{totalFinalizadas}</strong>
+          </div>
           <ul className="list-group">
-            {actividades.map(act => (
+            {actividadesOrdenadas.map(act => (
               <li
                 key={act._id}
                 className="list-group-item d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-2"
                 style={{
-                  textDecoration: estaFinalizada(act.fechaFin) ? 'line-through' : 'none',
-                  background: estaFinalizada(act.fechaFin) ? '#f8bbd0' : '#fff',
+                  textDecoration: estaFinalizada(act) ? 'line-through' : 'none',
+                  background: estaFinalizada(act) ? '#f8bbd0' : '#fff',
                   fontSize: '1.3rem',
                   padding: '22px 12px',
                 }}
@@ -229,15 +296,22 @@ function App() {
         }}
       >
         <h2 className="mb-3" style={{ color: '#000000ff', fontSize: '2.2rem' }}>Editar novedad</h2>
-        <input name="nombre" className="form-control form-control-lg mb-3" style={{ width: '100%' }} value={editForm.nombre} onChange={handleEditChange} placeholder="Nombre" />
-        <input name="lugar" className="form-control form-control-lg mb-3" style={{ width: '100%' }} value={editForm.lugar} onChange={handleEditChange} placeholder="Lugar" />
-        <input name="horario" className="form-control form-control-lg mb-3" style={{ width: '100%' }} value={editForm.horario} onChange={handleEditChange} placeholder="Horario" />
-        <input name="fechaFin" type="date" className="form-control form-control-lg mb-3" style={{ width: '100%' }} value={editForm.fechaFin} onChange={handleEditChange} />
-        <input name="detalles" className="form-control form-control-lg mb-3" style={{ width: '100%' }} value={editForm.detalles} onChange={handleEditChange} placeholder="Detalles" />
-        <div className="d-flex justify-content-end mt-3">
-          <button onClick={() => guardarEdicion(editId)} className="btn btn-success btn-lg mx-2" style={{ fontSize: '1.2rem' }}>Guardar</button>
-          <button onClick={cancelarEdicion} className="btn btn-secondary btn-lg" style={{ fontSize: '1.2rem' }}>Cancelar</button>
-        </div>
+        <form onSubmit={e => { e.preventDefault(); guardarEdicion(editId); }}>
+          <label htmlFor="edit-nombre" className="form-label">Nombre</label>
+          <input id="edit-nombre" name="nombre" className="form-control form-control-lg mb-3" style={{ width: '100%' }} value={editForm.nombre} onChange={handleEditChange} placeholder="Nombre" />
+          <label htmlFor="edit-lugar" className="form-label">Lugar</label>
+          <input id="edit-lugar" name="lugar" className="form-control form-control-lg mb-3" style={{ width: '100%' }} value={editForm.lugar} onChange={handleEditChange} placeholder="Lugar" />
+          <label htmlFor="edit-horario" className="form-label">Horario</label>
+          <input id="edit-horario" name="horario" className="form-control form-control-lg mb-3" style={{ width: '100%' }} value={editForm.horario} onChange={handleEditChange} placeholder="Horario" />
+          <label htmlFor="edit-fechaFin" className="form-label">Fecha</label>
+          <input id="edit-fechaFin" name="fechaFin" type="date" className="form-control form-control-lg mb-3" style={{ width: '100%' }} value={editForm.fechaFin} onChange={handleEditChange} placeholder="Fecha" />
+          <label htmlFor="edit-detalles" className="form-label">Detalles</label>
+          <input id="edit-detalles" name="detalles" className="form-control form-control-lg mb-3" style={{ width: '100%' }} value={editForm.detalles} onChange={handleEditChange} placeholder="Detalles" />
+          <div className="d-flex justify-content-end mt-3">
+            <button type="submit" className="btn btn-success btn-lg mx-2" style={{ fontSize: '1.2rem' }}>Guardar</button>
+            <button type="button" onClick={cancelarEdicion} className="btn btn-secondary btn-lg" style={{ fontSize: '1.2rem' }}>Cancelar</button>
+          </div>
+        </form>
       </Modal>
     </div>
   );
